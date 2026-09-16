@@ -1,0 +1,2298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Free Invoice Generator | Codelure Digital Solutions</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            margin: 0;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+                BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background:
+                radial-gradient(circle at 10% 10%, rgba(37, 99, 235, .15), transparent 30%),
+                radial-gradient(circle at 90% 20%, rgba(139, 92, 246, .12), transparent 30%),
+                #020617;
+            color: #e2e8f0;
+        }
+
+        .glass {
+            background: rgba(15, 23, 42, .72);
+            border: 1px solid rgba(148, 163, 184, .13);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, .25),
+                inset 0 1px 0 rgba(255, 255, 255, .03);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            border-radius: 12px;
+            border: 1px solid rgba(148, 163, 184, .16);
+            background: rgba(2, 6, 23, .65);
+            color: #f8fafc;
+            padding: 11px 13px;
+            outline: none;
+            transition: .2s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+        }
+
+        .form-input::placeholder,
+        .form-textarea::placeholder {
+            color: #64748b;
+        }
+
+        .form-select option {
+            background: #0f172a;
+            color: white;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #f8fafc;
+        }
+
+        .section-number {
+            width: 27px;
+            height: 27px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: rgba(37, 99, 235, .15);
+            color: #60a5fa;
+            font-size: 12px;
+        }
+
+        .item-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 75px 95px 95px 38px;
+            gap: 8px;
+            align-items: end;
+            margin-bottom: 10px;
+        }
+
+        .invoice-preview-wrapper {
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+            padding: 15px;
+        }
+
+        /*
+            SMALL INVOICE PAPER
+            A6 = 105mm × 148mm
+        */
+
+        .invoice-paper {
+            width: 105mm;
+            min-height: 148mm;
+            background: white;
+            color: #111827;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, .35);
+            padding: 9mm;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .invoice-paper * {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        .invoice-logo {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+            border-radius: 6px;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 9px;
+        }
+
+        .invoice-table th {
+            background: #f3f4f6;
+            color: #374151;
+            text-align: left;
+            padding: 5px 4px;
+            font-weight: 700;
+        }
+
+        .invoice-table td {
+            padding: 5px 4px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: top;
+        }
+
+        .invoice-table th:last-child,
+        .invoice-table td:last-child {
+            text-align: right;
+        }
+
+        .invoice-table th:nth-child(2),
+        .invoice-table td:nth-child(2),
+        .invoice-table th:nth-child(3),
+        .invoice-table td:nth-child(3) {
+            text-align: center;
+        }
+
+        .total-box {
+            margin-top: 12px;
+            margin-left: auto;
+            width: 55%;
+            font-size: 9px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 3px 0;
+        }
+
+        .grand-total {
+            margin-top: 4px;
+            padding: 6px 0;
+            border-top: 1px solid #111827;
+            border-bottom: 2px solid #111827;
+            font-size: 11px;
+            font-weight: 800;
+        }
+
+        .invoice-footer {
+            margin-top: 20px;
+            padding-top: 8px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 7.5px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        .toast {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            z-index: 9999;
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: .25s ease;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            background: #22c55e;
+            box-shadow: 0 0 0 5px rgba(34, 197, 94, .1);
+        }
+
+        @media (max-width: 900px) {
+            .item-row {
+                grid-template-columns: 1fr 70px 85px 85px 38px;
+            }
+        }
+
+        @media (max-width: 700px) {
+            .item-row {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .item-row .item-description {
+                grid-column: 1 / -1;
+            }
+
+            .item-row .remove-item {
+                grid-column: 2;
+            }
+
+            .invoice-preview-wrapper {
+                justify-content: flex-start;
+                padding: 8px;
+            }
+        }
+
+        @media print {
+
+            @page {
+                size: A6 portrait;
+                margin: 0;
+            }
+
+            html,
+            body {
+                width: 105mm;
+                min-width: 105mm;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: white !important;
+            }
+
+            body {
+                overflow: visible !important;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+
+            #invoicePreviewArea {
+                display: block !important;
+                width: 105mm !important;
+                min-height: 148mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+
+            .invoice-preview-wrapper {
+                display: block !important;
+                width: 105mm !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+
+            .invoice-paper {
+                width: 105mm !important;
+                min-height: 148mm !important;
+                box-shadow: none !important;
+                margin: 0 !important;
+                page-break-after: avoid;
+                page-break-inside: avoid;
+            }
+
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- =========================================================
+     MAIN APP
+========================================================= -->
+
+<div class="min-h-screen">
+
+    <!-- HEADER -->
+    <header class="no-print border-b border-slate-800/70 bg-slate-950/70 backdrop-blur-xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+
+            <div class="flex flex-wrap items-center justify-between gap-4">
+
+                <div class="flex items-center gap-3">
+
+                    <div class="w-11 h-11 rounded-xl bg-blue-600/15 border border-blue-500/20 flex items-center justify-center text-xl">
+                        🧾
+                    </div>
+
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="font-bold text-white">
+                                Free Invoice Generator
+                            </h1>
+
+                            <span class="text-[10px] px-2 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                FREE
+                            </span>
+                        </div>
+
+                        <p class="text-xs text-slate-500">
+                            Codelure Digital Solutions
+                        </p>
+                    </div>
+
+                </div>
+
+                <div class="flex items-center gap-2 text-xs text-slate-400">
+                    <span class="pulse-dot"></span>
+                    Saved locally in your browser
+                </div>
+
+            </div>
+
+        </div>
+    </header>
+
+
+    <!-- MAIN -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+
+        <!-- INTRO -->
+        <section class="no-print mb-8">
+
+            <div class="max-w-3xl">
+
+                <p class="text-blue-400 text-xs font-bold tracking-[.2em] uppercase mb-3">
+                    Free Business Tool
+                </p>
+
+                <h2 class="text-3xl sm:text-5xl font-black tracking-tight text-white">
+                    Create a professional invoice
+                    <span class="text-blue-500">in seconds.</span>
+                </h2>
+
+                <p class="text-slate-400 mt-4 max-w-2xl leading-7">
+                    Save your business information once and create unlimited
+                    small invoices without signing up or paying for software.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <div class="grid lg:grid-cols-[480px_minmax(0,1fr)] gap-6 items-start">
+
+
+            <!-- =====================================================
+                 LEFT SIDE
+            ====================================================== -->
+
+            <div class="space-y-5 no-print">
+
+
+                <!-- BUSINESS PROFILE -->
+                <section class="glass rounded-2xl p-5">
+
+                    <div class="section-title">
+                        <span class="section-number">01</span>
+                        Business Profile
+                    </div>
+
+                    <div class="mb-4 rounded-xl border border-blue-500/15 bg-blue-500/5 p-3">
+
+                        <p class="text-xs text-blue-300 leading-5">
+                            💡 Save your business information once.
+                            It will automatically appear on every new invoice.
+                        </p>
+
+                    </div>
+
+
+                    <!-- LOGO -->
+                    <div class="mb-4">
+
+                        <label class="block text-xs font-medium text-slate-400 mb-2">
+                            Business Logo
+                        </label>
+
+                        <div class="flex items-center gap-3">
+
+                            <div id="logoPlaceholder"
+                                 class="w-16 h-16 rounded-xl bg-slate-900 border border-slate-700 flex items-center justify-center text-2xl">
+                                🏢
+                            </div>
+
+                            <img id="logoPreview"
+                                 class="hidden w-16 h-16 rounded-xl object-contain bg-white border border-slate-700 p-1">
+
+                            <div>
+                                <label class="cursor-pointer inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-white transition">
+                                    Upload Logo
+                                    <input
+                                        id="logoInput"
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        class="hidden">
+                                </label>
+
+                                <button
+                                    id="removeLogoBtn"
+                                    type="button"
+                                    class="hidden ml-2 text-xs text-red-400 hover:text-red-300">
+                                    Remove
+                                </button>
+
+                                <p class="text-[10px] text-slate-600 mt-2">
+                                    PNG, JPG or WebP · Max 2MB
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="grid sm:grid-cols-2 gap-3">
+
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Business Name
+                            </label>
+
+                            <input
+                                id="businessName"
+                                class="form-input"
+                                placeholder="e.g. ABC Digital Store">
+                        </div>
+
+
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Phone
+                            </label>
+
+                            <input
+                                id="businessPhone"
+                                class="form-input"
+                                placeholder="e.g. 0300 1234567">
+                        </div>
+
+
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Email
+                            </label>
+
+                            <input
+                                id="businessEmail"
+                                type="email"
+                                class="form-input"
+                                placeholder="hello@example.com">
+                        </div>
+
+
+                        <div class="sm:col-span-2">
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Business Address
+                            </label>
+
+                            <textarea
+                                id="businessAddress"
+                                rows="2"
+                                class="form-textarea"
+                                placeholder="Business address"></textarea>
+
+                        </div>
+
+                    </div>
+
+
+                    <button
+                        id="saveBusinessBtn"
+                        type="button"
+                        class="mt-4 w-full rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 transition shadow-lg shadow-blue-600/10">
+
+                        💾 Save Business Profile
+
+                    </button>
+
+
+                    <div
+                        id="businessSavedStatus"
+                        class="hidden mt-3 text-center text-xs text-emerald-400">
+
+                        ✓ Business profile saved
+
+                    </div>
+
+                </section>
+
+
+                <!-- CUSTOMER -->
+                <section class="glass rounded-2xl p-5">
+
+                    <div class="section-title">
+                        <span class="section-number">02</span>
+                        Customer Details
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-3">
+
+                        <div class="sm:col-span-2">
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Customer Name
+                            </label>
+
+                            <input
+                                id="customerName"
+                                class="form-input"
+                                placeholder="Customer name">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Phone
+                            </label>
+
+                            <input
+                                id="customerPhone"
+                                class="form-input"
+                                placeholder="Customer phone">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Email
+                            </label>
+
+                            <input
+                                id="customerEmail"
+                                type="email"
+                                class="form-input"
+                                placeholder="Customer email">
+
+                        </div>
+
+
+                        <div class="sm:col-span-2">
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Address
+                            </label>
+
+                            <textarea
+                                id="customerAddress"
+                                rows="2"
+                                class="form-textarea"
+                                placeholder="Customer address"></textarea>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- INVOICE SETTINGS -->
+                <section class="glass rounded-2xl p-5">
+
+                    <div class="section-title">
+                        <span class="section-number">03</span>
+                        Invoice Settings
+                    </div>
+
+                    <div class="grid sm:grid-cols-2 gap-3">
+
+                        <div>
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Invoice Number
+                            </label>
+
+                            <input
+                                id="invoiceNumber"
+                                class="form-input"
+                                placeholder="INV-001">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Invoice Date
+                            </label>
+
+                            <input
+                                id="invoiceDate"
+                                type="date"
+                                class="form-input">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Currency
+                            </label>
+
+                            <select
+                                id="currency"
+                                class="form-select">
+
+                                <option value="PKR">PKR - Pakistani Rupee</option>
+                                <option value="USD">USD - US Dollar</option>
+                                <option value="GBP">GBP - British Pound</option>
+                                <option value="EUR">EUR - Euro</option>
+                                <option value="AED">AED - UAE Dirham</option>
+                                <option value="SAR">SAR - Saudi Riyal</option>
+
+                            </select>
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Tax %
+                            </label>
+
+                            <input
+                                id="tax"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value="0"
+                                class="form-input"
+                                placeholder="0">
+
+                        </div>
+
+
+                        <div>
+
+                            <label class="block text-xs text-slate-400 mb-2">
+                                Discount %
+                            </label>
+
+                            <input
+                                id="discount"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value="0"
+                                class="form-input"
+                                placeholder="0">
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+
+                <!-- PRODUCTS -->
+                <section class="glass rounded-2xl p-5">
+
+                    <div class="flex items-center justify-between gap-3 mb-4">
+
+                        <div class="section-title mb-0">
+                            <span class="section-number">04</span>
+                            Products / Services
+                        </div>
+
+                        <button
+                            id="addItemBtn"
+                            type="button"
+                            class="px-3 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold">
+
+                            + Add Item
+
+                        </button>
+
+                    </div>
+
+
+                    <div
+                        id="itemsContainer">
+                    </div>
+
+                </section>
+
+
+                <!-- NOTES -->
+                <section class="glass rounded-2xl p-5">
+
+                    <div class="section-title">
+                        <span class="section-number">05</span>
+                        Notes
+                    </div>
+
+                    <textarea
+                        id="invoiceNotes"
+                        rows="3"
+                        class="form-textarea"
+                        placeholder="Thank you for your business!"></textarea>
+
+                </section>
+
+
+                <!-- ACTIONS -->
+                <section class="glass rounded-2xl p-5">
+
+                    <div class="grid sm:grid-cols-2 gap-3">
+
+                        <button
+                            id="printBtn"
+                            type="button"
+                            class="rounded-xl bg-white text-slate-950 hover:bg-slate-200 py-3 font-bold transition">
+
+                            🖨 Save / Print Invoice
+
+                        </button>
+
+
+                        <button
+                            id="whatsappBtn"
+                            type="button"
+                            class="rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white py-3 font-bold transition">
+
+                            WhatsApp Invoice
+
+                        </button>
+
+                    </div>
+
+
+                    <button
+                        id="newInvoiceBtn"
+                        type="button"
+                        class="w-full mt-3 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 py-3 font-semibold transition">
+
+                        + Start New Invoice
+
+                    </button>
+
+
+                    <p class="text-[11px] text-slate-600 text-center mt-4 leading-5">
+                        Your business profile stays saved when you start a new invoice.
+                    </p>
+
+                </section>
+
+            </div>
+
+
+            <!-- =====================================================
+                 RIGHT SIDE PREVIEW
+            ====================================================== -->
+
+            <section
+                id="invoicePreviewArea"
+                class="glass rounded-2xl overflow-hidden">
+
+                <div class="no-print px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+
+                    <div>
+
+                        <p class="text-xs text-blue-400 font-bold uppercase tracking-wider">
+                            Live Preview
+                        </p>
+
+                        <p class="text-sm text-slate-400 mt-1">
+                            Small A6 invoice
+                        </p>
+
+                    </div>
+
+
+                    <div class="text-xs px-3 py-1.5 rounded-full bg-slate-800 text-slate-400">
+                        105 × 148 mm
+                    </div>
+
+                </div>
+
+
+                <div class="invoice-preview-wrapper">
+
+                    <div
+                        id="invoicePaper"
+                        class="invoice-paper">
+
+
+                        <!-- INVOICE HEADER -->
+
+                        <div class="flex items-start justify-between gap-4">
+
+                            <div class="flex items-center gap-2">
+
+                                <div>
+
+                                    <img
+                                        id="printLogo"
+                                        class="hidden invoice-logo">
+
+                                    <div
+                                        id="printLogoPlaceholder"
+                                        class="invoice-logo flex items-center justify-center bg-gray-100 text-sm">
+
+                                        🏢
+
+                                    </div>
+
+                                </div>
+
+
+                                <div>
+
+                                    <h2
+                                        id="previewBusinessName"
+                                        class="font-bold text-[13px] leading-tight">
+
+                                        Business Name
+
+                                    </h2>
+
+                                    <p
+                                        id="previewBusinessAddress"
+                                        class="text-[7.5px] text-gray-500 mt-1 max-w-[125px] whitespace-pre-line">
+
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+
+                            <div class="text-right">
+
+                                <h1 class="font-black text-[15px] uppercase tracking-tight">
+                                    Invoice
+                                </h1>
+
+                                <p class="text-[7px] text-gray-500 mt-1">
+                                    <span id="previewInvoiceNumber">
+                                        INV-001
+                                    </span>
+                                </p>
+
+                                <p
+                                    id="previewInvoiceDate"
+                                    class="text-[7px] text-gray-500">
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- CONTACT -->
+
+                        <div class="mt-2 text-[7px] text-gray-500">
+
+                            <span id="previewBusinessPhone"></span>
+
+                            <span id="previewBusinessEmail"></span>
+
+                        </div>
+
+
+                        <!-- CUSTOMER -->
+
+                        <div class="mt-4 p-2 rounded bg-gray-50">
+
+                            <p class="text-[7px] uppercase tracking-wider font-bold text-gray-400">
+                                Bill To
+                            </p>
+
+                            <p
+                                id="previewCustomerName"
+                                class="font-bold text-[9px] mt-1">
+
+                                Customer Name
+
+                            </p>
+
+                            <p
+                                id="previewCustomerPhone"
+                                class="text-[7px] text-gray-500">
+                            </p>
+
+                            <p
+                                id="previewCustomerAddress"
+                                class="text-[7px] text-gray-500 whitespace-pre-line">
+                            </p>
+
+                        </div>
+
+
+                        <!-- ITEMS -->
+
+                        <table class="invoice-table">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>
+                                        Item
+                                    </th>
+
+                                    <th>
+                                        Qty
+                                    </th>
+
+                                    <th>
+                                        Price
+                                    </th>
+
+                                    <th>
+                                        Total
+                                    </th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="previewItems">
+
+                                <tr>
+
+                                    <td colspan="4" class="text-center text-gray-400">
+                                        No items added
+                                    </td>
+
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+
+                        <!-- TOTALS -->
+
+                        <div class="total-box">
+
+                            <div class="total-row">
+
+                                <span>
+                                    Subtotal
+                                </span>
+
+                                <strong id="previewSubtotal">
+                                    PKR 0.00
+                                </strong>
+
+                            </div>
+
+
+                            <div class="total-row">
+
+                                <span>
+                                    Tax
+                                </span>
+
+                                <strong id="previewTax">
+                                    PKR 0.00
+                                </strong>
+
+                            </div>
+
+
+                            <div class="total-row">
+
+                                <span>
+                                    Discount
+                                </span>
+
+                                <strong id="previewDiscount">
+                                    PKR 0.00
+                                </strong>
+
+                            </div>
+
+
+                            <div class="total-row grand-total">
+
+                                <span>
+                                    TOTAL
+                                </span>
+
+                                <strong id="previewTotal">
+                                    PKR 0.00
+                                </strong>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- NOTES -->
+
+                        <div
+                            id="previewNotesWrapper"
+                            class="hidden mt-4">
+
+                            <p class="text-[7px] uppercase font-bold text-gray-400">
+                                Notes
+                            </p>
+
+                            <p
+                                id="previewNotes"
+                                class="text-[7px] text-gray-500 mt-1 whitespace-pre-line">
+                            </p>
+
+                        </div>
+
+
+                        <!-- FOOTER -->
+
+                        <div class="invoice-footer">
+
+                            <p
+                                id="previewFooterText">
+                                Thank you for your business!
+                            </p>
+
+                            <p class="mt-1">
+                                Invoice generated with Codelure Digital Solutions.
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+        </div>
+
+
+        <!-- Codelure CTA -->
+        <section class="no-print mt-8">
+
+            <div class="glass rounded-2xl p-6 text-center">
+
+                <p class="text-xs text-blue-400 uppercase tracking-[.2em] font-bold">
+                    Need More?
+                </p>
+
+                <h3 class="text-2xl font-bold text-white mt-2">
+                    Need a custom business solution?
+                </h3>
+
+                <p class="text-slate-400 text-sm max-w-xl mx-auto mt-3 leading-6">
+                    Codelure Digital Solutions builds professional websites,
+                    business software, automation and AI solutions.
+                </p>
+
+                <a
+                    href="https://wa.me/923117329783"
+                    target="_blank"
+                    class="inline-flex items-center gap-2 mt-5 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold transition">
+
+                    Talk to Codelure →
+
+                </a>
+
+            </div>
+
+        </section>
+
+    </main>
+
+</div>
+
+
+<!-- TOAST -->
+<div
+    id="toast"
+    class="toast glass rounded-xl px-4 py-3 text-sm font-semibold">
+</div>
+
+
+<script>
+
+    /* =========================================================
+       CONFIG
+    ========================================================= */
+
+    var BUSINESS_STORAGE_KEY = "codelure_business_profile_v1";
+    var INVOICE_STORAGE_KEY = "codelure_current_invoice_v1";
+
+    var CODELURE_WHATSAPP = "923117329783";
+
+
+    /* =========================================================
+       HELPERS
+    ========================================================= */
+
+    function $(id) {
+        return document.getElementById(id);
+    }
+
+
+    function getToday() {
+
+        var d = new Date();
+
+        var month = String(d.getMonth() + 1).padStart(2, "0");
+        var day = String(d.getDate()).padStart(2, "0");
+
+        return d.getFullYear() + "-" + month + "-" + day;
+    }
+
+
+    function escapeHTML(value) {
+
+        if (value === null || value === undefined) {
+            return "";
+        }
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+
+    function showToast(message) {
+
+        var toast = $("toast");
+
+        toast.textContent = message;
+        toast.classList.add("show");
+
+        setTimeout(function () {
+            toast.classList.remove("show");
+        }, 2200);
+    }
+
+
+    function getCurrencySymbol(currency) {
+
+        var symbols = {
+            PKR: "PKR",
+            USD: "$",
+            GBP: "£",
+            EUR: "€",
+            AED: "AED",
+            SAR: "SAR"
+        };
+
+        return symbols[currency] || currency;
+    }
+
+
+    function formatMoney(value) {
+
+        var number = Number(value) || 0;
+
+        return number.toLocaleString(undefined, {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+
+    /* =========================================================
+       BUSINESS PROFILE
+    ========================================================= */
+
+    function getBusinessProfile() {
+
+        return {
+            businessName: $("businessName").value.trim(),
+            businessPhone: $("businessPhone").value.trim(),
+            businessEmail: $("businessEmail").value.trim(),
+            businessAddress: $("businessAddress").value.trim(),
+            logo: window.currentLogo || ""
+        };
+
+    }
+
+
+    function saveBusinessProfile(showMessage) {
+
+        var profile = getBusinessProfile();
+
+        localStorage.setItem(
+            BUSINESS_STORAGE_KEY,
+            JSON.stringify(profile)
+        );
+
+        $("businessSavedStatus").classList.remove("hidden");
+
+        if (showMessage !== false) {
+            showToast("Business profile saved");
+        }
+
+    }
+
+
+    function loadBusinessProfile() {
+
+        var raw = localStorage.getItem(BUSINESS_STORAGE_KEY);
+
+        if (!raw) {
+            return;
+        }
+
+        try {
+
+            var profile = JSON.parse(raw);
+
+            $("businessName").value =
+                profile.businessName || "";
+
+            $("businessPhone").value =
+                profile.businessPhone || "";
+
+            $("businessEmail").value =
+                profile.businessEmail || "";
+
+            $("businessAddress").value =
+                profile.businessAddress || "";
+
+            window.currentLogo =
+                profile.logo || "";
+
+            if (window.currentLogo) {
+                showLogo(window.currentLogo);
+            }
+
+            $("businessSavedStatus").classList.remove("hidden");
+
+        } catch (error) {
+
+            console.error("Business profile error:", error);
+
+        }
+
+    }
+
+
+    /* =========================================================
+       LOGO
+    ========================================================= */
+
+    function showLogo(dataURL) {
+
+        if (!dataURL) {
+
+            $("logoPreview").classList.add("hidden");
+            $("logoPlaceholder").classList.remove("hidden");
+            $("removeLogoBtn").classList.add("hidden");
+
+            $("printLogo").classList.add("hidden");
+            $("printLogoPlaceholder").classList.remove("hidden");
+
+            return;
+        }
+
+
+        $("logoPreview").src = dataURL;
+        $("logoPreview").classList.remove("hidden");
+        $("logoPlaceholder").classList.add("hidden");
+        $("removeLogoBtn").classList.remove("hidden");
+
+
+        $("printLogo").src = dataURL;
+        $("printLogo").classList.remove("hidden");
+        $("printLogoPlaceholder").classList.add("hidden");
+
+    }
+
+
+    $("logoInput").addEventListener("change", function (event) {
+
+        var file = event.target.files[0];
+
+        if (!file) {
+            return;
+        }
+
+
+        if (file.size > 2 * 1024 * 1024) {
+
+            showToast("Logo must be smaller than 2MB");
+
+            event.target.value = "";
+
+            return;
+        }
+
+
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+
+            window.currentLogo = e.target.result;
+
+            showLogo(window.currentLogo);
+
+            saveBusinessProfile(false);
+
+            updateInvoice();
+
+        };
+
+        reader.readAsDataURL(file);
+
+    });
+
+
+    $("removeLogoBtn").addEventListener("click", function () {
+
+        window.currentLogo = "";
+
+        showLogo("");
+
+        $("logoInput").value = "";
+
+        saveBusinessProfile(false);
+
+        showToast("Logo removed");
+
+    });
+
+
+    /* =========================================================
+       ADD ITEM
+    ========================================================= */
+
+    function addItem(itemData) {
+
+        itemData = itemData || {};
+
+        var row = document.createElement("div");
+
+        row.className = "item-row";
+
+
+        row.innerHTML = `
+
+            <div class="item-description">
+
+                <label class="block text-[10px] text-slate-500 mb-1">
+                    Description
+                </label>
+
+                <input
+                    type="text"
+                    class="form-input item-name"
+                    placeholder="Product / service"
+                    value="${escapeHTML(itemData.name || "")}">
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-[10px] text-slate-500 mb-1">
+                    Qty
+                </label>
+
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="form-input item-qty"
+                    placeholder="1"
+                    value="${itemData.qty !== undefined ? itemData.qty : ""}">
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-[10px] text-slate-500 mb-1">
+                    Price
+                </label>
+
+                <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    class="form-input item-price"
+                    placeholder="0"
+                    value="${itemData.price !== undefined ? itemData.price : ""}">
+
+            </div>
+
+
+            <div>
+
+                <label class="block text-[10px] text-slate-500 mb-1">
+                    Total
+                </label>
+
+                <div class="form-input item-total text-slate-300">
+                    0.00
+                </div>
+
+            </div>
+
+
+            <button
+                type="button"
+                class="remove-item h-[44px] rounded-xl border border-red-500/10 bg-red-500/5 text-red-400 hover:bg-red-500/10 transition">
+
+                ×
+
+            </button>
+
+        `;
+
+
+        $("itemsContainer").appendChild(row);
+
+
+        row.querySelectorAll("input").forEach(function (input) {
+
+            input.addEventListener("input", function () {
+
+                updateInvoice();
+
+                saveCurrentInvoice();
+
+            });
+
+        });
+
+
+        row.querySelector(".remove-item").addEventListener("click", function () {
+
+            row.remove();
+
+            if ($("itemsContainer").children.length === 0) {
+                addItem();
+            }
+
+            updateInvoice();
+            saveCurrentInvoice();
+
+        });
+
+
+        updateInvoice();
+
+    }
+
+
+    $("addItemBtn").addEventListener("click", function () {
+
+        addItem();
+
+    });
+
+
+    /* =========================================================
+       GET ITEMS
+    ========================================================= */
+
+    function getItems() {
+
+        var rows = $("itemsContainer").querySelectorAll(".item-row");
+
+        var items = [];
+
+
+        rows.forEach(function (row) {
+
+            var name =
+                row.querySelector(".item-name").value.trim();
+
+            var qty =
+                Number(row.querySelector(".item-qty").value) || 0;
+
+            var price =
+                Number(row.querySelector(".item-price").value) || 0;
+
+
+            if (name || qty || price) {
+
+                items.push({
+                    name: name,
+                    qty: qty,
+                    price: price,
+                    total: qty * price
+                });
+
+            }
+
+        });
+
+
+        return items;
+
+    }
+
+
+    /* =========================================================
+       UPDATE INVOICE
+    ========================================================= */
+
+    function updateInvoice() {
+
+        var currency =
+            $("currency").value || "PKR";
+
+        var symbol =
+            getCurrencySymbol(currency);
+
+
+        /* BUSINESS */
+
+        $("previewBusinessName").textContent =
+            $("businessName").value.trim() || "Business Name";
+
+
+        $("previewBusinessAddress").textContent =
+            $("businessAddress").value.trim();
+
+
+        var phone =
+            $("businessPhone").value.trim();
+
+        var email =
+            $("businessEmail").value.trim();
+
+
+        $("previewBusinessPhone").textContent =
+            phone ? phone : "";
+
+
+        $("previewBusinessEmail").textContent =
+            email
+                ? (phone ? "  •  " : "") + email
+                : "";
+
+
+        /* INVOICE */
+
+        $("previewInvoiceNumber").textContent =
+            $("invoiceNumber").value.trim() || "INV-001";
+
+
+        var dateValue =
+            $("invoiceDate").value;
+
+
+        if (dateValue) {
+
+            var date = new Date(dateValue + "T00:00:00");
+
+            $("previewInvoiceDate").textContent =
+                date.toLocaleDateString();
+
+        } else {
+
+            $("previewInvoiceDate").textContent = "";
+
+        }
+
+
+        /* CUSTOMER */
+
+        $("previewCustomerName").textContent =
+            $("customerName").value.trim() || "Customer Name";
+
+
+        $("previewCustomerPhone").textContent =
+            $("customerPhone").value.trim();
+
+
+        $("previewCustomerAddress").textContent =
+            $("customerAddress").value.trim();
+
+
+        /* ITEMS */
+
+        var items = getItems();
+
+        var previewItems = $("previewItems");
+
+        previewItems.innerHTML = "";
+
+
+        if (items.length === 0) {
+
+            previewItems.innerHTML = `
+
+                <tr>
+
+                    <td colspan="4"
+                        class="text-center text-gray-400">
+
+                        No items added
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        } else {
+
+            items.forEach(function (item) {
+
+                var tr = document.createElement("tr");
+
+                tr.innerHTML = `
+
+                    <td>
+                        ${escapeHTML(item.name || "Item")}
+                    </td>
+
+                    <td>
+                        ${item.qty}
+                    </td>
+
+                    <td>
+                        ${symbol} ${formatMoney(item.price)}
+                    </td>
+
+                    <td>
+                        ${symbol} ${formatMoney(item.total)}
+                    </td>
+
+                `;
+
+                previewItems.appendChild(tr);
+
+            });
+
+        }
+
+
+        /* TOTALS */
+
+        var subtotal = items.reduce(function (sum, item) {
+
+            return sum + item.total;
+
+        }, 0);
+
+
+        var taxPercent =
+            Number($("tax").value) || 0;
+
+
+        var discountPercent =
+            Number($("discount").value) || 0;
+
+
+        var taxAmount =
+            subtotal * taxPercent / 100;
+
+
+        var discountAmount =
+            subtotal * discountPercent / 100;
+
+
+        var total =
+            subtotal + taxAmount - discountAmount;
+
+
+        $("previewSubtotal").textContent =
+            symbol + " " + formatMoney(subtotal);
+
+
+        $("previewTax").textContent =
+            symbol + " " + formatMoney(taxAmount);
+
+
+        $("previewDiscount").textContent =
+            symbol + " " + formatMoney(discountAmount);
+
+
+        $("previewTotal").textContent =
+            symbol + " " + formatMoney(total);
+
+
+        /* NOTES */
+
+        var notes =
+            $("invoiceNotes").value.trim();
+
+
+        if (notes) {
+
+            $("previewNotesWrapper").classList.remove("hidden");
+
+            $("previewNotes").textContent =
+                notes;
+
+        } else {
+
+            $("previewNotesWrapper").classList.add("hidden");
+
+            $("previewNotes").textContent = "";
+
+        }
+
+
+        /* ITEM TOTALS IN FORM */
+
+        $("itemsContainer")
+            .querySelectorAll(".item-row")
+            .forEach(function (row) {
+
+                var qty =
+                    Number(row.querySelector(".item-qty").value) || 0;
+
+                var price =
+                    Number(row.querySelector(".item-price").value) || 0;
+
+                row.querySelector(".item-total").textContent =
+                    formatMoney(qty * price);
+
+            });
+
+    }
+
+
+    /* =========================================================
+       COLLECT CURRENT INVOICE
+    ========================================================= */
+
+    function collectInvoiceData() {
+
+        return {
+
+            customerName:
+                $("customerName").value,
+
+            customerPhone:
+                $("customerPhone").value,
+
+            customerEmail:
+                $("customerEmail").value,
+
+            customerAddress:
+                $("customerAddress").value,
+
+            invoiceNumber:
+                $("invoiceNumber").value,
+
+            invoiceDate:
+                $("invoiceDate").value,
+
+            currency:
+                $("currency").value,
+
+            tax:
+                $("tax").value,
+
+            discount:
+                $("discount").value,
+
+            invoiceNotes:
+                $("invoiceNotes").value,
+
+            items:
+                getItems()
+
+        };
+
+    }
+
+
+    /* =========================================================
+       SAVE CURRENT INVOICE
+    ========================================================= */
+
+    function saveCurrentInvoice() {
+
+        try {
+
+            localStorage.setItem(
+                INVOICE_STORAGE_KEY,
+                JSON.stringify(
+                    collectInvoiceData()
+                )
+            );
+
+        } catch (error) {
+
+            console.error(
+                "Could not save invoice:",
+                error
+            );
+
+        }
+
+    }
+
+
+    /* =========================================================
+       LOAD CURRENT INVOICE
+    ========================================================= */
+
+    function loadCurrentInvoice() {
+
+        var raw =
+            localStorage.getItem(
+                INVOICE_STORAGE_KEY
+            );
+
+
+        if (!raw) {
+
+            $("invoiceDate").value =
+                getToday();
+
+            $("invoiceNumber").value =
+                "INV-001";
+
+            $("currency").value =
+                "PKR";
+
+            $("tax").value =
+                "0";
+
+            $("discount").value =
+                "0";
+
+            addItem();
+
+            updateInvoice();
+
+            return;
+
+        }
+
+
+        try {
+
+            var data =
+                JSON.parse(raw);
+
+
+            $("customerName").value =
+                data.customerName || "";
+
+            $("customerPhone").value =
+                data.customerPhone || "";
+
+            $("customerEmail").value =
+                data.customerEmail || "";
+
+            $("customerAddress").value =
+                data.customerAddress || "";
+
+            $("invoiceNumber").value =
+                data.invoiceNumber || "INV-001";
+
+            $("invoiceDate").value =
+                data.invoiceDate || getToday();
+
+            $("currency").value =
+                data.currency || "PKR";
+
+            $("tax").value =
+                data.tax || "0";
+
+            $("discount").value =
+                data.discount || "0";
+
+            $("invoiceNotes").value =
+                data.invoiceNotes || "";
+
+
+            $("itemsContainer").innerHTML = "";
+
+
+            if (
+                data.items &&
+                Array.isArray(data.items) &&
+                data.items.length
+            ) {
+
+                data.items.forEach(function (item) {
+
+                    addItem(item);
+
+                });
+
+            } else {
+
+                addItem();
+
+            }
+
+
+            updateInvoice();
+
+        } catch (error) {
+
+            console.error(
+                "Invoice loading error:",
+                error
+            );
+
+            addItem();
+
+            updateInvoice();
+
+        }
+
+    }
+
+
+    /* =========================================================
+       SAVE BUSINESS BUTTON
+    ========================================================= */
+
+    $("saveBusinessBtn").addEventListener(
+        "click",
+        function () {
+
+            saveBusinessProfile(true);
+
+            updateInvoice();
+
+        }
+    );
+
+
+    /* =========================================================
+       INPUT LISTENERS
+    ========================================================= */
+
+    [
+
+        "businessName",
+        "businessPhone",
+        "businessEmail",
+        "businessAddress",
+        "customerName",
+        "customerPhone",
+        "customerEmail",
+        "customerAddress",
+        "invoiceNumber",
+        "invoiceDate",
+        "currency",
+        "tax",
+        "discount",
+        "invoiceNotes"
+
+    ].forEach(function (id) {
+
+        $(id).addEventListener("input", function () {
+
+            updateInvoice();
+
+            saveCurrentInvoice();
+
+        });
+
+        $(id).addEventListener("change", function () {
+
+            updateInvoice();
+
+            saveCurrentInvoice();
+
+        });
+
+    });
+
+
+    /* =========================================================
+       NEW INVOICE
+       IMPORTANT:
+       BUSINESS PROFILE IS NOT CLEARED
+    ========================================================= */
+
+    $("newInvoiceBtn").addEventListener(
+        "click",
+        function () {
+
+            var confirmed =
+                confirm(
+                    "Start a new invoice?\n\nYour saved business profile will stay unchanged."
+                );
+
+
+            if (!confirmed) {
+                return;
+            }
+
+
+            /* Clear invoice-specific information */
+
+            $("customerName").value = "";
+            $("customerPhone").value = "";
+            $("customerEmail").value = "";
+            $("customerAddress").value = "";
+
+            $("invoiceNumber").value =
+                generateNextInvoiceNumber();
+
+            $("invoiceDate").value =
+                getToday();
+
+            $("currency").value =
+                "PKR";
+
+            $("tax").value =
+                "0";
+
+            $("discount").value =
+                "0";
+
+            $("invoiceNotes").value =
+                "";
+
+
+            /* Clear items */
+
+            $("itemsContainer").innerHTML = "";
+
+            addItem();
+
+
+            /* Save clean invoice */
+
+            saveCurrentInvoice();
+
+            updateInvoice();
+
+
+            showToast(
+                "New invoice created. Business profile kept."
+            );
+
+        }
+    );
+
+
+    /* =========================================================
+       INVOICE NUMBER
+    ========================================================= */
+
+    function generateNextInvoiceNumber() {
+
+        var oldNumber =
+            localStorage.getItem(
+                "codelure_last_invoice_number"
+            );
+
+
+        var number = 1;
+
+
+        if (oldNumber) {
+
+            var parsed =
+                parseInt(
+                    oldNumber.replace(/\D/g, ""),
+                    10
+                );
+
+
+            if (!isNaN(parsed)) {
+                number = parsed + 1;
+            }
+
+        }
+
+
+        localStorage.setItem(
+            "codelure_last_invoice_number",
+            String(number)
+        );
+
+
+        return "INV-" +
+            String(number).padStart(3, "0");
+
+    }
+
+
+    /* =========================================================
+       PRINT
+    ========================================================= */
+
+    $("printBtn").addEventListener(
+        "click",
+        function () {
+
+            updateInvoice();
+
+            saveCurrentInvoice();
+
+            window.print();
+
+        }
+    );
+
+
+    /* =========================================================
+       WHATSAPP
+    ========================================================= */
+
+    $("whatsappBtn").addEventListener(
+        "click",
+        function () {
+
+            var items =
+                getItems();
+
+
+            var currency =
+                $("currency").value || "PKR";
+
+
+            var symbol =
+                getCurrencySymbol(currency);
+
+
+            var subtotal =
+                items.reduce(
+                    function (sum, item) {
+                        return sum + item.total;
+                    },
+                    0
+                );
+
+
+            var taxPercent =
+                Number($("tax").value) || 0;
+
+
+            var discountPercent =
+                Number($("discount").value) || 0;
+
+
+            var taxAmount =
+                subtotal * taxPercent / 100;
+
+
+            var discountAmount =
+                subtotal * discountPercent / 100;
+
+
+            var total =
+                subtotal +
+                taxAmount -
+                discountAmount;
+
+
+            var business =
+                $("businessName").value.trim() ||
+                "Our Business";
+
+
+            var invoiceNumber =
+                $("invoiceNumber").value.trim() ||
+                "INV-001";
+
+
+            var customer =
+                $("customerName").value.trim() ||
+                "Customer";
+
+
+            var message =
+                "🧾 *" +
+                business +
+                "*\n\n" +
+
+                "Invoice: " +
+                invoiceNumber +
+                "\n" +
+
+                "Customer: " +
+                customer +
+                "\n\n";
+
+
+            items.forEach(function (item) {
+
+                message +=
+                    "• " +
+                    item.name +
+                    " × " +
+                    item.qty +
+                    " = " +
+                    symbol +
+                    " " +
+                    formatMoney(item.total) +
+                    "\n";
+
+            });
+
+
+            message +=
+                "\nSubtotal: " +
+                symbol +
+                " " +
+                formatMoney(subtotal) +
+
+                "\nTax: " +
+                symbol +
+                " " +
+                formatMoney(taxAmount) +
+
+                "\nDiscount: " +
+                symbol +
+                " " +
+                formatMoney(discountAmount) +
+
+                "\n\n*Total: " +
+                symbol +
+                " " +
+                formatMoney(total) +
+                "*";
+
+
+            var url =
+                "https://wa.me/?text=" +
+                encodeURIComponent(message);
+
+
+            window.open(
+                url,
+                "_blank"
+            );
+
+        }
+    );
+
+
+    /* =========================================================
+       INITIALIZE
+    ========================================================= */
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        function () {
+
+            window.currentLogo = "";
+
+            loadBusinessProfile();
+
+            loadCurrentInvoice();
+
+            updateInvoice();
+
+        }
+    );
+
+</script>
+
+</body>
+</html>
